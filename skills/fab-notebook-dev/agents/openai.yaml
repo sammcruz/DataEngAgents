@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab Notebook Dev"
+  short_description: "Develop and validate Fabric notebooks"
+  default_prompt: "Use $fab-notebook-dev to export, edit, import, run, and validate a Fabric notebook safely."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab Workspace"
+  short_description: "Design and organize Fabric workspaces"
+  default_prompt: "Use $fab-workspace to choose a workspace architecture mode and safely organize workspace folders and items."
