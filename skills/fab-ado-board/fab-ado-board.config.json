@@ -1,4 +1,5 @@
 {
+    "_security_notice": "Never store secrets, passwords, or tokens (e.g. ado_pat) in this file or anywhere in the repository. Use the ADO_PAT environment variable instead.",
     "ado_organization": "<your-organization>",
     "ado_project": "<your-project>",
     "ado_pat": "",
