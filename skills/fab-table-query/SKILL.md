@@ -16,7 +16,13 @@ This skill is specifically useful when:
 3. You need repeatable validation output in automation.
 4. You must explain why data is not visible yet in the SQL analytics endpoint.
 
-Start by confirming workspace and item paths, then choose one query method below.
+### Cloud-Only Notebook Editing Policy (Mandatory)
+
+- Never edit notebook files inside local source repositories as part of table validation.
+- When a validation notebook is needed, create or edit it only in temporary paths (for example `/tmp/...`) and import it into the Fabric workspace.
+- Treat repository notebook files as read-only unless the user explicitly asks for source-control updates.
+
+Use `fab-discovery` first if workspace or item paths are not known. Use `fab-notebook-dev` if you need full notebook edit/import/run loops.
 
 ## Fast Path Decision
 
@@ -42,7 +48,8 @@ Pick the method based on intent:
    - SQL analytics endpoint (read-only T-SQL)
    - Read-only validation notebook (automation-friendly)
 4. If SQL endpoint does not show fresh data/schema yet, run metadata refresh (portal or API) and retry.
-5. Report what was validated (counts, keys, mismatches) and how it was validated.
+5. Keep notebook edits in cloud-export temp folders only; do not modify repository notebooks.
+6. Report what was validated (counts, keys, mismatches) and how it was validated.
 
 ## Commands
 
@@ -87,15 +94,15 @@ Example checks:
 
 ```sql
 SELECT TOP (100) *
-FROM dbo.orders;
+FROM dbo.sales_orders;
 
 SELECT
-  region,
-  customer_id,
-  order_id,
+    country_code,
+    customer,
+    invoice_id,
     COUNT(*) AS line_count
-FROM dbo.orders
-GROUP BY region, customer_id, order_id;
+FROM dbo.sales_orders
+GROUP BY country_code, customer, invoice_id;
 ```
 
 Notes:
@@ -120,7 +127,7 @@ Minimal example cell:
 import json
 from pyspark.sql import functions as f
 
-table_name = "silver.orders"
+table_name = "silver.sales_orders"
 df = spark.table(table_name)
 
 report = {
@@ -131,7 +138,7 @@ report = {
 
 mssparkutils.fs.mkdirs("Files/_debug")
 mssparkutils.fs.put(
-  "Files/_debug/orders_report.json",
+    "Files/_debug/sales_orders_report.json",
     json.dumps(report, default=str, indent=2),
     True
 )
@@ -153,6 +160,7 @@ If SQL endpoint results are stale:
 - Do not claim row-level validation from `fab get` table paths alone.
 - Do not claim business validation from `job run-status` alone.
 - Keep validation notebooks read-only unless user explicitly asks for writes.
+- Never apply validation notebook edits directly to local repository notebook files.
 - Remove temporary debug notebooks/artifacts after verification.
 - If using OneLake APIs, remember they are file APIs; they do not replace SQL query engines.
 

@@ -16,3 +16,6 @@ output/
 .DS_Store
 .vscode/
 .idea/
+
+# Private deny-list for scripts/check_anonymized.py (customer/employer names)
+.anonymize-denylist.txt

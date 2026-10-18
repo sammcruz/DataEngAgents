@@ -6,9 +6,9 @@ A real agent runner for Azure DevOps Wiki operations using the same credentials 
 
 Examples:
   python scripts/fab_ado_wiki_agent.py list-wikis
-    python scripts/fab_ado_wiki_agent.py get-page --wiki "<project>.wiki" --path "/" --include-content
-    python scripts/fab_ado_wiki_agent.py upsert-page --wiki "<project>.wiki" --path "/Automation/Test" --text "# Test"
-    python scripts/fab_ado_wiki_agent.py upsert-page --wiki "<project>.wiki" --path "/Automation/Test" --text-file /tmp/page.md --execute
+    python scripts/fab_ado_wiki_agent.py get-page --wiki "Wiki" --path "/" --include-content --version main --version-type branch
+    python scripts/fab_ado_wiki_agent.py upsert-page --wiki "Wiki" --path "/Automation/Test" --text "# Test" --version main --version-type branch
+    python scripts/fab_ado_wiki_agent.py upsert-page --wiki "Wiki" --path "/Automation/Test" --text-file /tmp/page.md --version main --version-type branch --execute
 """
 
 from __future__ import annotations
@@ -35,6 +35,17 @@ API_VERSION = "7.1"
 
 class AgentError(RuntimeError):
     """Raised for expected operational failures."""
+
+
+class AdoApiError(AgentError):
+    """Raised for Azure DevOps API failures with structured metadata."""
+
+    def __init__(self, method: str, url: str, status_code: int, body_preview: str) -> None:
+        self.method = method
+        self.url = url
+        self.status_code = status_code
+        self.body_preview = body_preview
+        super().__init__(f"ADO Wiki API {method} {url} failed: {status_code}\\n{body_preview}")
 
 
 @dataclass
@@ -100,7 +111,7 @@ class FabAdoWikiAgent:
 
         if not response.ok:
             preview = response.text[:2000]
-            raise AgentError(f"ADO Wiki API {method} {url} failed: {response.status_code}\\n{preview}")
+            raise AdoApiError(method=method, url=url, status_code=response.status_code, body_preview=preview)
 
         if not response.text:
             return {}
@@ -128,6 +139,8 @@ class FabAdoWikiAgent:
         path: str,
         include_content: bool = False,
         recursion_level: str = "none",
+        version: Optional[str] = None,
+        version_type: Optional[str] = None,
     ) -> Dict[str, Any]:
         params = {
             "api-version": API_VERSION,
@@ -135,6 +148,10 @@ class FabAdoWikiAgent:
             "includeContent": str(bool(include_content)).lower(),
             "recursionLevel": recursion_level,
         }
+        if version:
+            params["versionDescriptor.version"] = version
+        if version_type:
+            params["versionDescriptor.versionType"] = version_type
         return self._request(
             "GET",
             f"wiki/wikis/{wiki_identifier}/pages",
@@ -149,6 +166,8 @@ class FabAdoWikiAgent:
         execute: bool,
         comment: Optional[str] = None,
         if_match: Optional[str] = None,
+        version: Optional[str] = None,
+        version_type: Optional[str] = None,
     ) -> Dict[str, Any]:
         payload = {"content": content}
         params: Dict[str, Any] = {
@@ -157,6 +176,10 @@ class FabAdoWikiAgent:
         }
         if comment:
             params["comment"] = comment
+        if version:
+            params["versionDescriptor.version"] = version
+        if version_type:
+            params["versionDescriptor.versionType"] = version_type
 
         headers = {"Content-Type": "application/json"}
         if if_match:
@@ -168,18 +191,60 @@ class FabAdoWikiAgent:
                 "action": "upsert_page",
                 "wiki": wiki_identifier,
                 "path": path,
+                "notes": [
+                    "If --execute is used and page already exists, runner auto-retries with If-Match when ETag can be resolved."
+                ],
                 "params": params,
                 "headers": {k: v for k, v in headers.items() if k.lower() != "authorization"},
                 "payload_preview": {"content_length": len(content)},
             }
 
-        return self._request(
-            "PUT",
-            f"wiki/wikis/{wiki_identifier}/pages",
-            params=params,
-            headers=headers,
-            json_body=payload,
-        )
+        try:
+            return self._request(
+                "PUT",
+                f"wiki/wikis/{wiki_identifier}/pages",
+                params=params,
+                headers=headers,
+                json_body=payload,
+            )
+        except AdoApiError as exc:
+            # Code wikis can return "already exists" for PUT without If-Match.
+            # For true upsert semantics, fetch ETag and retry as update.
+            if if_match or not _is_already_exists_error(exc):
+                raise
+
+            current = self.get_page(
+                wiki_identifier=wiki_identifier,
+                path=path,
+                include_content=False,
+                recursion_level="none",
+                version=version,
+                version_type=version_type,
+            )
+            etag = current.get("_meta", {}).get("etag")
+            if not etag:
+                raise AgentError(
+                    "Page exists but ETag could not be resolved automatically. Retry with --if-match explicitly."
+                ) from exc
+
+            retry_headers = dict(headers)
+            retry_headers["If-Match"] = etag
+            return self._request(
+                "PUT",
+                f"wiki/wikis/{wiki_identifier}/pages",
+                params=params,
+                headers=retry_headers,
+                json_body=payload,
+            )
+
+
+def _is_already_exists_error(exc: AdoApiError) -> bool:
+    body = exc.body_preview.lower()
+    return (
+        "wikipagealreadyexistsexception" in body
+        or "already exists" in body
+        or "specified in the add operation already exists" in body
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -198,6 +263,8 @@ def parse_args() -> argparse.Namespace:
     p_get.add_argument("--path", required=True, help="Wiki page path, e.g. / or /My/Page")
     p_get.add_argument("--include-content", action="store_true", help="Include page content body")
     p_get.add_argument("--recursion-level", default="none", help="none|oneLevel|full")
+    p_get.add_argument("--version", help="Version descriptor value (for code wiki, usually branch name)")
+    p_get.add_argument("--version-type", help="Version descriptor type, e.g. branch|tag|commit")
 
     p_put = sub.add_parser("upsert-page", help="Create or update wiki page content")
     p_put.add_argument("--wiki", required=True, help="Wiki identifier (name or id)")
@@ -206,6 +273,8 @@ def parse_args() -> argparse.Namespace:
     p_put.add_argument("--text-file", help="Path to content file")
     p_put.add_argument("--comment", help="Change comment")
     p_put.add_argument("--if-match", help="ETag for update concurrency control")
+    p_put.add_argument("--version", help="Version descriptor value (for code wiki, usually branch name)")
+    p_put.add_argument("--version-type", help="Version descriptor type, e.g. branch|tag|commit")
     p_put.add_argument("--execute", action="store_true", help="Actually execute write operation")
 
     return parser.parse_args()
@@ -225,7 +294,7 @@ def _read_config(config_path: Path) -> AdoConfig:
     if not project:
         raise AgentError("Missing 'ado_project' in config")
     if not pat:
-        raise AgentError("Missing PAT; set ADO_PAT env var or add ado_pat placeholder value in config")
+        raise AgentError("Missing PAT; set ado_pat in config or ADO_PAT env var")
 
     return AdoConfig(organization=org, project=project, pat=pat)
 
@@ -240,7 +309,7 @@ def _read_text(inline_value: Optional[str], file_path: Optional[str]) -> str:
 
 def _write_run_log(log_dir: Path, payload: Dict[str, Any]) -> Path:
     log_dir.mkdir(parents=True, exist_ok=True)
-    ts = dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    ts = dt.datetime.now(dt.UTC).strftime("%Y%m%dT%H%M%SZ")
     out = log_dir / f"run-{ts}.json"
     out.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return out
@@ -256,6 +325,8 @@ def _run(agent: FabAdoWikiAgent, args: argparse.Namespace) -> Dict[str, Any]:
             path=args.path,
             include_content=args.include_content,
             recursion_level=args.recursion_level,
+            version=args.version,
+            version_type=args.version_type,
         )
 
     if args.command == "upsert-page":
@@ -267,6 +338,8 @@ def _run(agent: FabAdoWikiAgent, args: argparse.Namespace) -> Dict[str, Any]:
             execute=args.execute,
             comment=args.comment,
             if_match=args.if_match,
+            version=args.version,
+            version_type=args.version_type,
         )
 
     raise AgentError(f"Unsupported command: {args.command}")
@@ -284,7 +357,7 @@ def main() -> int:
 
         result = _run(agent, args)
         envelope = {
-            "timestamp_utc": dt.datetime.utcnow().isoformat() + "Z",
+            "timestamp_utc": dt.datetime.now(dt.UTC).isoformat().replace("+00:00", "Z"),
             "command": args.command,
             "organization": config.organization,
             "project": config.project,

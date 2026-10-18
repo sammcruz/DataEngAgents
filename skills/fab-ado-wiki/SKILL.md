@@ -1,6 +1,6 @@
 ---
 name: fab-ado-wiki
-description: Use this skill to read and update Azure DevOps Wiki pages, reusing the same Azure DevOps credentials as fab-ado-board.
+description: Use this skill to read and update Azure DevOps Wiki pages for your Azure DevOps project, reusing the same Azure DevOps credentials as fab-ado-board.
 ---
 
 # Fab ADO Wiki
@@ -49,14 +49,23 @@ Quick examples:
 python scripts/fab_ado_wiki_agent.py list-wikis
 
 # Read a page with content
-python scripts/fab_ado_wiki_agent.py get-page --wiki "<project>.wiki" --path "/" --include-content
+python scripts/fab_ado_wiki_agent.py get-page --wiki "Wiki" --path "/" --include-content --version main --version-type branch
 
 # Dry-run update (safe)
-python scripts/fab_ado_wiki_agent.py upsert-page --wiki "<project>.wiki" --path "/Automation/Test" --text "# Test"
+python scripts/fab_ado_wiki_agent.py upsert-page --wiki "Wiki" --path "/Automation/Test" --text "# Test" --version main --version-type branch
 
 # Execute update
-python scripts/fab_ado_wiki_agent.py upsert-page --wiki "<project>.wiki" --path "/Automation/Test" --text-file /tmp/page.md --execute
+python scripts/fab_ado_wiki_agent.py upsert-page --wiki "Wiki" --path "/Automation/Test" --text-file /tmp/page.md --version main --version-type branch --execute
 ```
+
+## Code Wiki Note
+
+This project uses a **code wiki**. For reliable reads/writes, always pass:
+
+- `--version main`
+- `--version-type branch`
+
+The runner supports true upsert behavior: if a page already exists and `--if-match` is not provided, it automatically fetches ETag and retries as an update.
 
 Full usage guide:
 
@@ -80,6 +89,8 @@ https://dev.azure.com/{organization}/{project}/_apis
 - Use `--execute` only when ready to commit wiki changes.
 - Never print PAT values in logs or output.
 - Prefer page-level updates with explicit path and content source.
+- For code wiki pages, prefer `--version main --version-type branch` for deterministic behavior.
+- When manually passing `--if-match`, retrieve the latest ETag with `get-page` first.
 
 ## Output Expectations
 

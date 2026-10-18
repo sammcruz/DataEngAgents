@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab OneLake Ops"
+  short_description: "Operate on OneLake paths safely"
+  default_prompt: "Use $fab-onelake-ops to inspect, move, copy, and verify OneLake paths."

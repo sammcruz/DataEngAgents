@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab Discovery"
+  short_description: "Explore Fabric paths and commands"
+  default_prompt: "Use $fab-discovery to inspect workspaces, items, commands, and supported operations."

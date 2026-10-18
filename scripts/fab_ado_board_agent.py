@@ -12,11 +12,11 @@ A lightweight, real agent runner for the `fab-ado-board` skill that can:
 - execute multi-step plan files
 
 Usage examples:
-  python scripts/fab_ado_board_agent.py get --id 1858
-  python scripts/fab_ado_board_agent.py comments --id 1858 --top 20
+  python scripts/fab_ado_board_agent.py get --id 123
+  python scripts/fab_ado_board_agent.py comments --id 123 --top 20
   python scripts/fab_ado_board_agent.py wiql --query-file /tmp/query.wiql --fetch-details
-  python scripts/fab_ado_board_agent.py add-comment --id 1858 --text-file /tmp/comment.html --execute
-  python scripts/fab_ado_board_agent.py update --id 1858 --patch-file /tmp/patch.json --execute
+  python scripts/fab_ado_board_agent.py add-comment --id 123 --text-file /tmp/comment.html --execute
+  python scripts/fab_ado_board_agent.py update --id 123 --patch-file /tmp/patch.json --execute
   python scripts/fab_ado_board_agent.py plan --plan-file /tmp/ado-plan.json --execute
 """
 
@@ -213,6 +213,73 @@ class FabAdoBoardAgent:
             json_body=patch_ops,
         )
 
+    def get_repository_id(self, repository_name: Optional[str] = None) -> str:
+        repos = self._request("GET", "git/repositories", params={"api-version": WORK_ITEM_API_VERSION})
+        values = repos.get("value", [])
+        if not values:
+            raise AgentError("No git repositories found for this project.")
+        target_name = (repository_name or self.config.project).lower()
+        match = next((r for r in values if r["name"].lower() == target_name), None)
+        return (match or values[0])["id"]
+
+    def get_pull_request(self, pull_request_id: int, repository_id: Optional[str] = None) -> Dict[str, Any]:
+        repo_id = repository_id or self.get_repository_id()
+        return self._request(
+            "GET",
+            f"git/repositories/{repo_id}/pullrequests/{pull_request_id}",
+            params={"api-version": WORK_ITEM_API_VERSION},
+        )
+
+    def update_pull_request(
+        self,
+        pull_request_id: int,
+        fields: Dict[str, Any],
+        execute: bool,
+        repository_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        if not isinstance(fields, dict) or not fields:
+            raise AgentError("PR update body must be a non-empty JSON object (plain fields, not a JSON Patch array).")
+
+        if "description" in fields and len(fields["description"]) > 4000:
+            raise AgentError(
+                f"PR description is {len(fields['description'])} characters; ADO caps it at 4000."
+            )
+
+        if not execute:
+            return {
+                "dry_run": True,
+                "action": "update_pull_request",
+                "pull_request_id": pull_request_id,
+                "payload": fields,
+            }
+
+        repo_id = repository_id or self.get_repository_id()
+        return self._request(
+            "PATCH",
+            f"git/repositories/{repo_id}/pullrequests/{pull_request_id}",
+            params={"api-version": WORK_ITEM_API_VERSION},
+            headers={"Content-Type": "application/json"},
+            json_body=fields,
+        )
+
+    def get_branch_commits(
+        self,
+        branch_name: str,
+        top: int = 15,
+        repository_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        repo_id = repository_id or self.get_repository_id()
+        return self._request(
+            "GET",
+            f"git/repositories/{repo_id}/commits",
+            params={
+                "api-version": WORK_ITEM_API_VERSION,
+                "searchCriteria.itemVersion.version": branch_name,
+                "searchCriteria.itemVersion.versionType": "branch",
+                "$top": top,
+            },
+        )
+
     def execute_plan(self, plan: Dict[str, Any], execute: bool, continue_on_error: bool = False) -> Dict[str, Any]:
         steps = plan.get("steps")
         if not isinstance(steps, list) or not steps:
@@ -350,6 +417,25 @@ def parse_args() -> argparse.Namespace:
         help="Actually execute write operation (default is dry-run)",
     )
 
+    p_pr_get = sub.add_parser("pr-get", help="Get one pull request")
+    p_pr_get.add_argument("--id", type=int, required=True, help="Pull request ID")
+    p_pr_get.add_argument("--repository", help="Repository name (defaults to the project name)")
+
+    p_pr_update = sub.add_parser("pr-update", help="Update a pull request's fields (plain JSON body, not JSON Patch)")
+    p_pr_update.add_argument("--id", type=int, required=True, help="Pull request ID")
+    p_pr_update.add_argument("--fields-file", required=True, help="Path to a JSON object file, e.g. {\"description\": \"...\"}")
+    p_pr_update.add_argument("--repository", help="Repository name (defaults to the project name)")
+    p_pr_update.add_argument(
+        "--execute",
+        action="store_true",
+        help="Actually execute write operation (default is dry-run)",
+    )
+
+    p_commits = sub.add_parser("commits", help="List commits on a branch")
+    p_commits.add_argument("--branch", required=True, help="Branch name, e.g. development")
+    p_commits.add_argument("--top", type=int, default=15, help="Max commits to return")
+    p_commits.add_argument("--repository", help="Repository name (defaults to the project name)")
+
     p_plan = sub.add_parser("plan", help="Execute a multi-step plan JSON")
     p_plan.add_argument("--plan-file", required=True, help="Path to plan JSON file")
     p_plan.add_argument(
@@ -383,7 +469,7 @@ def _read_config(config_path: Path) -> AdoConfig:
     if not project:
         raise AgentError("Missing 'ado_project' in config.")
     if not pat:
-        raise AgentError("Missing ADO PAT. Set ADO_PAT env var or add ado_pat placeholder value in config.")
+        raise AgentError("Missing ADO PAT. Set 'ado_pat' in config or provide ADO_PAT env var.")
 
     return AdoConfig(organization=org, project=project, pat=pat)
 
@@ -412,7 +498,7 @@ def _read_ids(ids_inline: Optional[str], ids_file: Optional[str]) -> List[int]:
 
 def _write_run_log(log_dir: Path, payload: Dict[str, Any]) -> Path:
     log_dir.mkdir(parents=True, exist_ok=True)
-    ts = dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    ts = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     path = log_dir / f"run-{ts}.json"
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return path
@@ -450,6 +536,18 @@ def _build_command_result(agent: FabAdoBoardAgent, args: argparse.Namespace) -> 
         patch_ops = json.loads(Path(args.patch_file).read_text(encoding="utf-8"))
         return agent.update_work_item(args.id, patch_ops, execute=args.execute)
 
+    if cmd == "pr-get":
+        return agent.get_pull_request(args.id, repository_id=None if not args.repository else agent.get_repository_id(args.repository))
+
+    if cmd == "pr-update":
+        fields = json.loads(Path(args.fields_file).read_text(encoding="utf-8"))
+        repo_id = agent.get_repository_id(args.repository) if args.repository else None
+        return agent.update_pull_request(args.id, fields, execute=args.execute, repository_id=repo_id)
+
+    if cmd == "commits":
+        repo_id = agent.get_repository_id(args.repository) if args.repository else None
+        return agent.get_branch_commits(args.branch, top=args.top, repository_id=repo_id)
+
     if cmd == "plan":
         plan_data = json.loads(Path(args.plan_file).read_text(encoding="utf-8"))
         return agent.execute_plan(plan_data, execute=args.execute, continue_on_error=args.continue_on_error)
@@ -470,7 +568,7 @@ def main() -> int:
         result = _build_command_result(agent, args)
 
         envelope = {
-            "timestamp_utc": dt.datetime.utcnow().isoformat() + "Z",
+            "timestamp_utc": dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
             "command": args.command,
             "config_path": str(config_path),
             "organization": config.organization,

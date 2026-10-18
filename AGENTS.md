@@ -26,13 +26,19 @@ organization/project (never a real PAT — that comes from `ADO_PAT`).
 ## Validate before you trust a skill
 
 ```bash
-python scripts/quick_validate.py skills/fab-ado-board
-python scripts/quick_validate.py skills/fab-ado-wiki
-python scripts/quick_validate.py skills/fab-notebook-dev
-python scripts/quick_validate.py skills/fab-semantic-model
-python scripts/quick_validate.py skills/fab-table-query
-python scripts/quick_validate.py skills/fab-workspace
+for d in skills/*/; do python scripts/quick_validate.py "$d"; done
 ```
+
+## Check for leaked customer data before every commit
+
+```bash
+python scripts/check_anonymized.py
+```
+
+It flags GUIDs, e-mail addresses, tenant URLs, token-shaped strings and
+unknown URL hosts. Put customer, employer and project names in a private,
+git-ignored `.anonymize-denylist.txt` (one per line) and it flags those too.
+Enable the bundled hook with `git config core.hooksPath .githooks`.
 
 ## Directory map
 
@@ -44,6 +50,9 @@ python scripts/quick_validate.py skills/fab-workspace
 | `skills/` | Skills | What specialized knowledge is needed? |
 | `prompts/` | Prompts | What specific action to run? |
 | `scripts/` | — | Executable runners backing the agents above |
+| *(private repo)* | Knowledge | What is true about this customer? See `docs/knowledge-layer.md` |
+
+`REPO_MAP.md` indexes every agent, prompt, skill and doc on one page.
 
 ## Non-negotiable rules
 
@@ -61,6 +70,12 @@ python scripts/quick_validate.py skills/fab-workspace
    content.
 4. **New skills get validated.** Run `quick_validate.py` against any new or
    edited skill before referencing it from an agent or prompt.
+5. **Stay anonymous.** No customer, employer, workspace, table or person
+   names, no ids, no tenant URLs, in any file. Run
+   `python scripts/check_anonymized.py` before committing. Customer-specific
+   knowledge belongs in a private repository (`docs/knowledge-layer.md`).
+6. **Never edit a customer repository's local checkout.** Author live in the
+   Fabric workspace with `fab` or `fntk`.
 
 ## Quick start (read-only, safe to run without any config)
 

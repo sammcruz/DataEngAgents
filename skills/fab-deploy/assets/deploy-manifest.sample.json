@@ -1,0 +1,17 @@
+{
+  "stagingRoot": "staging/fab-deploy",
+  "items": [
+    {
+      "source": "dev.Workspace/nb-sales.Notebook",
+      "destination": "test.Workspace/nb-sales.Notebook",
+      "forceImport": true
+    },
+    {
+      "source": "dev.Workspace/pl-refresh.DataPipeline",
+      "destination": "test.Workspace/pl-refresh.DataPipeline",
+      "artifactDir": "staging/fab-deploy/02-pl-refresh",
+      "forceExport": true,
+      "forceImport": true
+    }
+  ]
+}

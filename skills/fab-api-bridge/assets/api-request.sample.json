@@ -1,0 +1,7 @@
+{
+  "endpoint": "workspaces",
+  "method": "get",
+  "audience": "fabric",
+  "showHeaders": false,
+  "outputFormat": "json"
+}

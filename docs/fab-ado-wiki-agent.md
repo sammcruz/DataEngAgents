@@ -1,6 +1,6 @@
 # Fab ADO Wiki Agent Runner
 
-Executable runner for the `fab-ado-wiki` skill.
+Real runner for the `fab-ado-wiki` skill.
 
 ## Paths
 
@@ -8,35 +8,34 @@ Executable runner for the `fab-ado-wiki` skill.
 - Skill: `skills/fab-ado-wiki/SKILL.md`
 - Shared config: `skills/fab-ado-board/fab-ado-board.config.json`
 
-## Capabilities
-
-- List project wikis
-- Read wiki page metadata/content
-- Create or update wiki pages (dry-run by default)
-
-## Command Examples
+## Commands
 
 ```bash
-# List wikis
+# List all project wikis
 python scripts/fab_ado_wiki_agent.py list-wikis
 
-# Read root page
-python scripts/fab_ado_wiki_agent.py get-page --wiki "<project>.wiki" --path "/" --include-content
+# Read root page content
+python scripts/fab_ado_wiki_agent.py get-page --wiki "Wiki" --path "/" --include-content --version main --version-type branch
 
-# Dry-run update
-python scripts/fab_ado_wiki_agent.py upsert-page --wiki "<project>.wiki" --path "/Automation/Test" --text "# Test"
+# Dry-run wiki update
+python scripts/fab_ado_wiki_agent.py upsert-page --wiki "Wiki" --path "/Automation/Test" --text "# Test" --version main --version-type branch
 
-# Execute update
-python scripts/fab_ado_wiki_agent.py upsert-page --wiki "<project>.wiki" --path "/Automation/Test" --text-file /tmp/page.md --execute
+# Execute wiki update
+python scripts/fab_ado_wiki_agent.py upsert-page --wiki "Wiki" --path "/Automation/Test" --text-file /tmp/page.md --version main --version-type branch --execute
+
+# Explicit ETag update (optional advanced mode)
+python scripts/fab_ado_wiki_agent.py upsert-page --wiki "Wiki" --path "/Automation/Test" --text-file /tmp/page.md --version main --version-type branch --if-match '"<etag>"' --execute
 ```
-
-## Logging
-
-Each run writes JSON output to:
-
-- `output/agents/fab-ado-wiki/runs/run-<timestamp>.json`
 
 ## Safety
 
-- Writes are dry-run unless `--execute` is passed.
-- Keep PAT values out of logs and committed files.
+- Write operations are dry-run unless `--execute` is provided.
+- PAT is never printed by the runner.
+- In code wiki mode, pass `--version main --version-type branch`.
+- Upsert auto-retries existing-page updates by resolving ETag when `--if-match` is omitted.
+
+## Logs
+
+Runs are logged to:
+
+- `output/agents/fab-ado-wiki/runs/run-<timestamp>.json`

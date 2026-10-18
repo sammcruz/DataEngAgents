@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab ACL Audit"
+  short_description: "Inspect and change Fabric access"
+  default_prompt: "Use $fab-acl-audit to inspect ACLs, compare access, and apply safe permission changes."

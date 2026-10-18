@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab Bootstrap"
+  short_description: "Install and set up Fabric CLI"
+  default_prompt: "Use $fab-bootstrap to install Fabric CLI, fix PATH, and verify interactive user login setup."

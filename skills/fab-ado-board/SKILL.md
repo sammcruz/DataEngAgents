@@ -15,11 +15,11 @@ Use this skill when the user wants to:
 4. Query work items by type, state, iteration, or custom WIQL
 5. Document completed work (add implementation details to tasks)
 
-Use this skill to track and document engineering work on your board.
+Use `fab-notebook-dev` for the actual Fabric notebook work. Use this skill to track and document that work on the board.
 
 ## Configuration
 
-The Azure DevOps credentials are stored in:
+Organization and project live in:
 
 ```
 skills/fab-ado-board/fab-ado-board.config.json
@@ -27,15 +27,15 @@ skills/fab-ado-board/fab-ado-board.config.json
 
 ```json
 {
-    "ado_organization": "your-organization",
-    "ado_project": "your-project",
-    "ado_pat": "<PAT>",
+    "ado_organization": "<your-organization>",
+    "ado_project": "<your-project>",
+    "ado_pat": "",
     "ado_area_path": "",
-    "output_path": "./output/requirements"
+    "output_path": "output/requirements"
 }
 ```
 
-Always read this file to get the PAT and org/project details before making API calls.
+The Personal Access Token comes from the `ADO_PAT` environment variable. Leave `ado_pat` empty and never write a token into this file or anywhere else in the repository. Read the file for organization and project before making API calls.
 
 ## Real Agent Runner
 
@@ -49,14 +49,54 @@ Quick examples:
 
 ```bash
 # Read one work item
-python scripts/fab_ado_board_agent.py get --id 1858
+python scripts/fab_ado_board_agent.py get --id 123
 
 # Dry-run write (no API mutation)
-python scripts/fab_ado_board_agent.py add-comment --id 1858 --text-file /tmp/comment.html
+python scripts/fab_ado_board_agent.py add-comment --id 123 --text-file /tmp/comment.html
 
 # Execute write
-python scripts/fab_ado_board_agent.py add-comment --id 1858 --text-file /tmp/comment.html --execute
+python scripts/fab_ado_board_agent.py add-comment --id 123 --text-file /tmp/comment.html --execute
 ```
+
+## Sprint Query Patterns
+
+Use these WIQL patterns for sprint-level reporting automation.
+
+### Current sprint stories + tasks
+
+```sql
+SELECT [System.Id]
+FROM WorkItems
+WHERE
+    [System.TeamProject] = @project
+    AND [System.IterationPath] = @CurrentIteration
+    AND [System.WorkItemType] IN ('User Story', 'Task')
+ORDER BY [System.WorkItemType], [System.Id]
+```
+
+### Current sprint bugs
+
+```sql
+SELECT [System.Id]
+FROM WorkItems
+WHERE
+    [System.TeamProject] = @project
+    AND [System.IterationPath] = @CurrentIteration
+    AND [System.WorkItemType] = 'Bug'
+ORDER BY [System.Id]
+```
+
+### Important WIQL constraint
+
+- Do **not** use `CONTAINS` with `System.IterationPath` (ADO rejects it for path fields).
+- Use `= @CurrentIteration` or `UNDER 'Project\\Iteration n'` instead.
+
+## Release Notes Mapping Rule
+
+When building release notes from board data:
+
+- For **User Stories**, developer attribution must come from **Task assignees** under that story.
+- For **Bugs**, use **Bug assignee** (or responsible implementer if reassigned through tasks).
 
 Full usage guide:
 
@@ -152,7 +192,7 @@ Uses JSON Patch format (`application/json-patch+json`):
 patch_body = [
     {"op": "add", "path": "/fields/System.Description", "value": "<p>HTML description here</p>"},
     {"op": "add", "path": "/fields/System.State", "value": "Active"},
-    {"op": "add", "path": "/fields/System.AssignedTo", "value": "user@domain.com"},
+    {"op": "add", "path": "/fields/System.AssignedTo", "value": "user@example.com"},
 ]
 
 resp = requests.patch(
@@ -185,7 +225,7 @@ comment_id = resp.json().get("id")
 patch_body = [
     {"op": "add", "path": "/fields/System.Title", "value": "New Task Title"},
     {"op": "add", "path": "/fields/System.Description", "value": "<p>Description</p>"},
-    {"op": "add", "path": "/fields/System.AssignedTo", "value": "user@domain.com"},
+    {"op": "add", "path": "/fields/System.AssignedTo", "value": "user@example.com"},
     {"op": "add", "path": "/fields/System.IterationPath", "value": "your-project\\Sprint 26"},
     # Link to parent (e.g., User Story):
     {"op": "add", "path": "/relations/-", "value": {
@@ -205,6 +245,61 @@ resp = requests.post(
 new_id = resp.json()["id"]
 ```
 
+## Pull Requests (ADO Git REST API, not the `wit/` endpoints)
+
+Not covered by the `fab_ado_board_agent.py` runner's subcommands yet (no `pr-get`/`pr-update`) — done ad hoc by importing `_read_config`/`FabAdoBoardAgent` from the script and calling `agent._request(...)` directly, reusing the same safe PAT-loading path. **Key difference from work items: PR updates take a plain JSON body, not a JSON Patch array.**
+
+### Find the repo id first
+
+```python
+repos = agent._request("GET", "git/repositories", params={"api-version": "7.1"})
+repo_id = next(r["id"] for r in repos["value"] if r["name"].lower() == project.lower())
+```
+
+### Read a PR
+
+```python
+pr = agent._request(
+    "GET",
+    f"git/repositories/{repo_id}/pullrequests/{pr_id}",
+    params={"api-version": "7.1"},
+)
+# pr["title"], pr["description"], pr["sourceRefName"], pr["targetRefName"], pr["status"]
+```
+
+### Update a PR's description
+
+```python
+agent._request(
+    "PATCH",
+    f"git/repositories/{repo_id}/pullrequests/{pr_id}",
+    params={"api-version": "7.1"},
+    headers={"Content-Type": "application/json"},
+    json_body={"description": new_description},  # plain body -- NOT a JSON Patch array like work items
+)
+```
+
+**Hard cap: 4000 characters.** Exceeding it returns a plain HTTP 400 `InvalidArgumentValueException` (no truncation) — check `len(current_description)` before drafting an addition.
+
+### List commits on a branch (to verify a claimed commit before writing about it)
+
+```python
+commits = agent._request(
+    "GET",
+    f"git/repositories/{repo_id}/commits",
+    params={
+        "api-version": "7.1",
+        "searchCriteria.itemVersion.version": "development",
+        "searchCriteria.itemVersion.versionType": "branch",
+        "$top": 15,  # NOT "searchCriteria.top" -- that's silently ignored, returns everything
+    },
+)
+```
+
+Useful before updating a PR description or work-item comment to claim something is "committed" or "included" — don't take a user's or a prior agent's self-report at face value for something you're about to write into a shared artifact; check the actual commit log (and `workspaces/{id}/git/status` for the Fabric-side workspace/git sync state) first.
+
+**One active PR per branch pair is a common ADO branch-policy setup** (check your own policy) — a second validated fix landing on the same source branch while a PR is still open doesn't need (or get) its own PR; it becomes part of the same PR automatically, and the existing description should be updated to document it (e.g. an "Also included in this PR: ..." section), not left undocumented.
+
 ## Common Fields Reference
 
 | Field path | Type | Example |
@@ -212,10 +307,10 @@ new_id = resp.json()["id"]
 | `System.Title` | string | "Ingest new fields from api for SCD" |
 | `System.Description` | HTML string | `<p>...</p>` |
 | `System.State` | string | New, Active, Resolved, Closed |
-| `System.AssignedTo` | email or display name | "user@domain.com" |
+| `System.AssignedTo` | email or display name | "user@example.com" |
 | `System.IterationPath` | string | "your-project\\Sprint 26" |
 | `System.AreaPath` | string | "your-project" |
-| `System.Tags` | semicolon-separated | "bronze; crm; api" |
+| `System.Tags` | semicolon-separated | "bronze; ingestion; api" |
 | `Microsoft.VSTS.Common.Priority` | integer | 1, 2, 3, 4 |
 | `Microsoft.VSTS.Scheduling.RemainingWork` | decimal | 4.0 |
 
@@ -234,7 +329,7 @@ Azure DevOps uses HTML in description and comment fields. Key patterns:
 </ul>
 
 <!-- Code -->
-<code>nb_transform_orders</code>
+<code>nb_bronze_schemas</code>
 
 <!-- Tables -->
 <table>
@@ -288,14 +383,20 @@ requests.post(f"{base}/wit/workitems/{id}/comments", auth=auth,
 - When documenting work, put the **brief summary in description** and **full details in comments** (comments have history/timestamps).
 - Always verify the update succeeded (check HTTP 200 response).
 
-## Optional Local Cache Pattern
+## Reading Local Requirements Cache
 
-If your team maintains a local cache of board snapshots, keep it under:
+The project maintains a local cache of all ADO work items at:
 
 ```
 ./output/requirements/
-├── index.json
-└── epics/
+├── index.json                    # All epics summary
+├── epics/
+│   ├── EPIC-1356_*.json          # Epic summary
+│   └── EPIC-1356_*/
+│       ├── Feature-1330_*.json   # Each child item
+│       └── ...
 ```
 
-This cache is optional and repository-specific. The agent works directly against the Azure DevOps API without it.
+To refresh this cache, run your project-local extractor and write into `./output/requirements`.
+
+Use the local JSON files for quick lookups without hitting the API.

@@ -15,7 +15,8 @@ deleting or moving anything until each phase is verified.
 
 - The target workspace name.
 - Optionally, a target architecture mode (`single-workspace` or
-  `workspace-per-stage` — see `skills/fab-workspace`).
+  `workspace-per-stage` — see `skills/fab-workspace-architecture`, and
+  `skills/fab-workspace-organize` for the folder work).
 
 ## Workflow
 

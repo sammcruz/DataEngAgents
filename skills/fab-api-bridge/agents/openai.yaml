@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab API Bridge"
+  short_description: "Use fab api for unsupported workflows"
+  default_prompt: "Use $fab-api-bridge to call Fabric REST endpoints through fab api."

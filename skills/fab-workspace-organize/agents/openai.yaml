@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab Workspace Organize"
+  short_description: "Organize Fabric workspaces safely"
+  default_prompt: "Use $fab-workspace-organize to create folders, clean up legacy items, and verify safe workspace organization in Fabric."

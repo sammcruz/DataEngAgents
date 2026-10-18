@@ -1,4 +1,4 @@
 interface:
   display_name: "Fab ADO Wiki"
   short_description: "Read and update Azure DevOps wiki pages"
-  default_prompt: "Use $fab-ado-wiki to read or update Azure DevOps Wiki pages with the shared credentials from fab-ado-board."
+  default_prompt: "Use $fab-ado-wiki to read or update Azure DevOps Wiki pages for your project, reusing the same credentials as fab-ado-board."

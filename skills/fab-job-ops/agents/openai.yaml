@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab Job Ops"
+  short_description: "Run and monitor Fabric jobs"
+  default_prompt: "Use $fab-job-ops to run a Fabric job, watch it, and summarize the result."

@@ -16,6 +16,13 @@ agent, skill, or prompt is in play. For the full model behind this file, see
   names, workspace names, and endpoints are configuration, not content —
   keep them as placeholders (`<your-organization>`, `<workspace>`, etc.) in
   anything meant to be reused.
+- **Stay anonymous.** This repository is a public template. Never write a
+  real customer, employer, workspace, table or person name, an id or a tenant
+  URL into any file. Run `python scripts/check_anonymized.py` before
+  committing; customer-specific knowledge belongs in a private repository
+  (see `docs/knowledge-layer.md`).
+- **Never edit a customer repository's local checkout.** Author live in the
+  Fabric workspace with `fab` or `fntk`.
 - Read before you write. Fetch current state before proposing an update.
 
 ## Conventions
@@ -34,7 +41,9 @@ agent, skill, or prompt is in play. For the full model behind this file, see
 - `agents/` — who is responsible for what, and their trust boundaries.
 - `skills/` — technical how-to for Fabric and Azure DevOps operations.
 - `prompts/` — ready-to-run task templates.
-- `docs/` — reference material and this repository's architecture.
+- `docs/` — reference material, this repository's architecture and
+  `docs/gotchas.md` (known root causes and workarounds).
+- `REPO_MAP.md` — one-page index of everything above.
 
 ## Adding to this repository
 

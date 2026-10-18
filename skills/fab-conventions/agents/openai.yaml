@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab Conventions"
+  short_description: "Govern Fabric naming and architecture conventions"
+  default_prompt: "Use $fab-conventions to define naming conventions, audit an existing Fabric workspace, and plan safe remediation for convention drift."

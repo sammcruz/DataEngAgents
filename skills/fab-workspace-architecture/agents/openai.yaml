@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab Workspace Architecture"
+  short_description: "Design Fabric medallion workspace patterns"
+  default_prompt: "Use $fab-workspace-architecture to design or review a Microsoft Fabric medallion setup, choosing between a single-workspace pattern and separate bronze, silver, and gold workspaces."

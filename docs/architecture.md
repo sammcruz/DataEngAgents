@@ -1,7 +1,7 @@
 # Architecture
 
-This repository separates agent context into five layers. Each layer answers
-exactly one question. When a piece of content could arguably live in two
+This repository separates agent context into five public layers, plus a sixth
+that stays private. Each layer answers exactly one question. When a piece of content could arguably live in two
 layers, it's in the wrong one.
 
 | Layer | Question it answers | Where it lives |
@@ -11,6 +11,7 @@ layers, it's in the wrong one.
 | **Agents** | Who is responsible? | `agents/`, `.github/agents/` |
 | **Skills** | What specialized knowledge is needed? | `skills/` |
 | **Prompts** | What specific action to run? | `prompts/` |
+| **Knowledge** (private) | What is true about *this* customer or repository? | A separate private repository, see [`knowledge-layer.md`](knowledge-layer.md) |
 
 ## Why split it this way
 
@@ -76,6 +77,22 @@ describes an **action**, not a technology — "document completed work", not
 "use HTML `<h3>` tags in Azure DevOps descriptions" (that belongs in the
 skill the prompt references).
 
+### Knowledge — what is true about this customer or repository (private)
+
+Everything that names a real customer, environment, workspace or incident.
+It deliberately lives **outside** this repository, in a private one, so the
+five layers above stay reusable and anonymous. See
+[`knowledge-layer.md`](knowledge-layer.md). The lessons that survive
+anonymisation are written up in [`gotchas.md`](gotchas.md).
+
+## Where a workflow lives
+
+A multi-step procedure ("investigate, propose, wait for approval, implement,
+validate, document") is **a prompt**, not an agent. The agent says who is
+responsible and where the trust boundaries are; the prompt says what to do
+in what order. That is why `bugfix-agent` is short and `prompts/fix-bug.md`
+carries the phases.
+
 ## Anti-patterns
 
 | Symptom | Fix |
@@ -84,6 +101,8 @@ skill the prompt references).
 | An agent file explains an API request shape | Move it to the relevant skill |
 | A global instruction only makes sense for one skill | Move it into that skill's `SKILL.md` |
 | A doc tells the agent *how* to do something, not *what exists* | Move the how-to into a skill |
+| An agent file contains a multi-step procedure | Move the procedure into a prompt and link to it |
+| A customer, workspace or table name appears anywhere in this repository | Remove it. Run `python scripts/check_anonymized.py` before committing |
 
 ## Applying this to a new integration
 
@@ -97,3 +116,5 @@ skill the prompt references).
 4. Is it a *specific, repeatable action*? → a new prompt under `prompts/`.
 5. Is it *reference material* someone would look up, not follow step by
    step? → a new doc under `docs/`.
+6. Does it name a real customer, environment or incident? → it does not
+   belong here. Put it in your private knowledge repository.

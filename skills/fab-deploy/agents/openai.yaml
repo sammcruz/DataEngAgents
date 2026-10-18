@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab Deploy"
+  short_description: "Deploy Fabric items with guardrails"
+  default_prompt: "Use $fab-deploy to export, promote, and import Fabric items safely."
