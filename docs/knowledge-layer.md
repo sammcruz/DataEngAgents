@@ -15,7 +15,10 @@ knowledge/
 ├── repos/<RepoName>.WorkspaceMap.md    which notebook or table lives where, by layer
 ├── repos/<RepoName>.WorkspaceLogic.md  why it works that way: conventions, recurring risk areas
 ├── decisions/LOG.md                    durable, dated, cross-project decisions
-└── errors/LOG.md                       root causes of past incidents worth remembering
+├── decisions/INDEX.md                  generated: one line per decision, with status
+├── errors/LOG.md                       root causes of past incidents worth remembering
+├── errors/entries/<date>-<slug>.md     optional: one file per entry once the log passes ~25 KB
+└── errors/INDEX.md                     generated: one line per entry, with status and a "due for review" list
 ```
 
 Empty templates for every file are in [`templates/knowledge/`](templates/knowledge/). Copy that folder into your private repository and fill it in.
@@ -25,6 +28,10 @@ Empty templates for every file are in [`templates/knowledge/`](templates/knowled
 - The [`repo-orientation`](../skills/repo-orientation/SKILL.md) skill reads `knowledge/repos/<RepoName>.md` before exploring an unfamiliar repository.
 - The workflow agents read `clients/` and `repos/` before an investigation, and `errors/LOG.md` before re-diagnosing a known failure.
 - At the end of a task, agents are asked to append what they learned to the right file, so the next session does not rediscover it: a standing design fact goes to `repos/`, a specific incident to `errors/LOG.md`, a cross-project decision to `decisions/LOG.md`.
+
+## Keeping it healthy
+
+A knowledge base that only grows becomes slow to use and wrong in places. Give every entry a status, read the generated index before the log, correct notes in place, and run a periodic [`memory-review`](../prompts/memory-review.md) pass. The reasoning, the size budgets and the checks are in [`memory-maintenance.md`](memory-maintenance.md).
 
 ## Rules
 

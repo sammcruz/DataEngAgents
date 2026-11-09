@@ -4,10 +4,12 @@ description: Validates skills and agent contracts before they're trusted in a wo
 responsibilities:
   - Validate SKILL.md frontmatter and structure
   - Scaffold new skills from the template
+  - Run the memory review pass over the private knowledge base and propose corrections
   - Flag skills that don't follow the Docs/Instructions/Agents/Skills/Prompts separation
 skills: []
 prompts:
   - new-skill
+  - memory-review
 ---
 
 # Governance Agent
@@ -27,6 +29,10 @@ agents rely on are well-formed.
 - Review new or edited `SKILL.md` files for scope creep (technical
   instructions leaking into `agents/`, or role/responsibility language
   leaking into `skills/`) — see [`docs/architecture.md`](../docs/architecture.md).
+
+- Run the [`memory-review`](../prompts/memory-review.md) prompt on a schedule: recheck stale and unverified
+  notes against ground truth, fix them in place, and propose the change as a diff or pull request. See
+  [`docs/memory-maintenance.md`](../docs/memory-maintenance.md).
 
 ## Golden Rule
 

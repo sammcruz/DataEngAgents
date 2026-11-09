@@ -63,14 +63,14 @@ templates.
 | `semantic-model-agent` | Semantic model changes with parent/child edit safety | `sm-safe-update` |
 | `devops-pipeline-agent` | A failed Azure DevOps CI/CD run | `fix-pipeline` |
 | `ado-board-agent`, `ado-wiki-agent` | Board and wiki access, dry-run first | `document-completed-work` |
-| `governance-agent` | Validating skills and agent contracts | `new-skill` |
+| `governance-agent` | Validating skills and agent contracts; keeping the knowledge base small and true | `new-skill`, `memory-review` |
 
 ### Prompts (`prompts/`): what to run
 
 Step-by-step workflows that tie agents and skills together: `fix-bug`,
 `fix-env-diff`, `fix-pipeline`, `deliver-work-item`, `release-notes`,
 `sm-safe-update`, `audit-workspace`, `document-completed-work`,
-`sync-notebook-changes`, `new-skill`.
+`sync-notebook-changes`, `new-skill`, `memory-review`.
 
 ### Docs (`docs/`)
 
@@ -84,6 +84,9 @@ Step-by-step workflows that tie agents and skills together: `fix-bug`,
 - [`knowledge-layer.md`](docs/knowledge-layer.md) and
   [`templates/knowledge/`](docs/templates/knowledge/): the private knowledge
   layer and empty templates for it.
+- [`memory-maintenance.md`](docs/memory-maintenance.md): keeping the knowledge
+  layer small, indexed and true: status fields, a generated index, size
+  budgets and a periodic review pass.
 - [`standing-instructions.template.md`](docs/standing-instructions.template.md):
   a starting point for the user-level instruction file your agent loads
   every session.
@@ -97,6 +100,10 @@ Step-by-step workflows that tie agents and skills together: `fix-bug`,
   and lists branch commits.
 - `check_anonymized.py`: scans for leaked ids, e-mails, tenant URLs, tokens
   and (optionally) a private deny-list of names.
+- `build_knowledge_index.py`: for your **private** knowledge repo. Generates
+  an `INDEX.md` per log (one line per entry, with status), lists entries due
+  for review, and warns when a file or an always-loaded instruction file
+  outgrows its size budget.
 - `quick_validate.py`, `init_skill.py`, `generate_openai_yaml.py`: validate
   and scaffold skills.
 
