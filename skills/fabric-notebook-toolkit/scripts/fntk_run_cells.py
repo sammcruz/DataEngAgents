@@ -28,7 +28,7 @@ CLIENT = ["--client-name", os.environ.get("FNTK_CLIENT_NAME", "agent")]
 def fntk(args):
     env = dict(os.environ)
     env.setdefault("FNTK_TELEMETRY_DISABLED", "1")
-    proc = subprocess.run(["fntk"] + args + ["--json"] + CLIENT,
+    proc = subprocess.run(["fntk"] + CLIENT + args + ["--json"],
                           capture_output=True, text=True, env=env)
     try:
         return json.loads(proc.stdout)

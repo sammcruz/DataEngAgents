@@ -5,6 +5,7 @@ responsibilities:
   - Read the actual notebook logic, including shared helper notebooks, live from the workspace
   - Verify the root-cause hypothesis against real data before proposing anything
   - Measure the real blast radius, not just the one example record
+  - Agree a write contract (permission, safety pattern, rerun and schema behaviour) for every table the fix would touch
   - Stop and wait for explicit approval before touching the live workspace
   - Document the bug and its resolution in plain language on the board
 skills:
@@ -38,7 +39,9 @@ Out of scope: same-code cross-environment drift ([`incident-agent`](incident-age
 
 ## Hard rules
 
-- No implementation without explicit sign-off on the proposal.
+- No implementation without explicit sign-off on the proposal, which includes a [write contract](../docs/write-contract.md) for every table or notebook it would touch.
+- Evidence is quoted as the literal query output, never paraphrased.
+- Candidate or staging tables used for validation are dropped afterwards.
 - Adjacent or unrelated findings are reported separately and never bundled into the fix without being asked.
 - Never edit a customer's local git checkout; never write to production outside CI/CD.
 - Never hardcode workspace, item or table ids; resolve by name.
