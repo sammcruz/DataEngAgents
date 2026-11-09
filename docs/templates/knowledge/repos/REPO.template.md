@@ -1,6 +1,6 @@
 # <RepoName>
 
-> Private. Keep it short: what the repository is, its entry points, where its own docs live.
+> Private. Keep it short: what the repository is, its entry points, where its own docs live. **Last reviewed:** YYYY-MM-DD.
 
 - **What it is:** one sentence.
 - **Entry points:** the notebooks, pipelines or folders to open first.
