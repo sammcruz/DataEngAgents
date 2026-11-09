@@ -75,8 +75,12 @@ Step-by-step workflows that tie agents and skills together: `fix-bug`,
 ### Docs (`docs/`)
 
 - [`gotchas.md`](docs/gotchas.md): anonymised root causes and workarounds
-  for the `fab` CLI, notebooks, CI/CD with `fabric-cicd`, semantic models and
-  Fabric data agents. Start here when something fails with a generic error.
+  for the `fab` CLI, notebooks, data loading and deletes, pipelines, CI/CD
+  with `fabric-cicd`, semantic models and Fabric data agents. Start here when
+  something fails with a generic error.
+- [`write-contract.md`](docs/write-contract.md): the short agreement (permission,
+  safety pattern, rerun and schema behaviour) an agent makes with you before
+  it writes to any table.
 - [`knowledge-layer.md`](docs/knowledge-layer.md) and
   [`templates/knowledge/`](docs/templates/knowledge/): the private knowledge
   layer and empty templates for it.
@@ -102,8 +106,12 @@ This template focuses on day-to-day Fabric operations. Microsoft's
 [`skills-for-fabric`](https://github.com/microsoft/skills-for-fabric) covers
 workloads this repository does not (Eventhouse, Eventstream, deployment
 pipelines, Git integration, Spark, SQL warehouse and more). Install it
-alongside this one rather than duplicating it here. In particular, its
-`git-integration-operations-cli` skill is the recommended way to commit a
+alongside this one rather than duplicating it here. Newer skills worth a look
+there: `onelake-catalog-cli` (suggests item, table and column descriptions and
+applies each only after the owner approves), `ontology-cli`, `databasehub-cli`
+(read-only) and `project-osmos` (a remote autonomous agent in preview:
+evaluate it in a sandbox workspace, not on customer capacities). Its
+`git-integration-operations-cli` skill is also the recommended way to commit a
 single item from a busy workspace (see [`docs/gotchas.md`](docs/gotchas.md)).
 
 ## Prerequisites

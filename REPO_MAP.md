@@ -47,7 +47,8 @@ One-page index of everything in this repository. Read this first in a new sessio
 |---|---|
 | `architecture.md` | The layered model and why it is split this way |
 | `knowledge-layer.md` | The private knowledge layer and how agents use it |
-| `gotchas.md` | Anonymised root causes and workarounds (fab CLI, notebooks, CI/CD, semantic models, data agents) |
+| `gotchas.md` | Anonymised root causes and workarounds (fab CLI, notebooks, data loading and deletes, pipelines, CI/CD, semantic models, data agents) |
+| `write-contract.md` | The permission / safety pattern / rerun / schema agreement made before any write |
 | `standing-instructions.template.md` | A starting point for a user-level instruction file |
 | `templates/knowledge/` | Empty templates for the private knowledge repository |
 | `prompt-cookbook.md` | Example prompts for the skills |

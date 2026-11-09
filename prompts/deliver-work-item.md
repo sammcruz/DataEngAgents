@@ -16,10 +16,10 @@ Read a work item, plan, implement in the Fabric workspace, validate with evidenc
 ## Workflow
 
 1. Read the work item with `fab-ado-board`: title, description, acceptance criteria and existing comments. Do not work from the user's paraphrase alone.
-2. Plan which notebooks, pipelines and tables change. Share the plan before implementing anything non-trivial.
+2. Plan which notebooks, pipelines and tables change. Share the plan before implementing anything non-trivial. For each table the plan states a [write contract](../docs/write-contract.md): permission, safety pattern (in place in DEV, candidate copy then promote, or staging plus manual promotion), rerun behaviour (fail if populated, idempotent on a named key, append, overwrite) and schema behaviour (locked, new columns, widening only). Every new table gets its schema definition and migration.
 3. Implement **live in the Fabric workspace**, in DEV unless told otherwise: `fab-notebook-dev` for new items and bulk edits, `fabric-notebook-toolkit` for single-cell edits and cell-by-cell iteration. Never edit a customer's local git checkout.
 4. Before any `fab import`, check the notebook's Lakehouse binding: the exported default Lakehouse workspace id must match the target workspace, and every known Lakehouse must resolve in that same workspace.
-5. Validate with one full `fab job start` run of the real notebook, then `fab-table-query` or an `fntk code run` query. Get concrete evidence (row counts, sample values), not just "ran without error". Delete any `fntk` session.
+5. Validate with one full `fab job start` run of the real notebook, then `fab-table-query` or an `fntk code run` query. Get concrete evidence (row counts, sample values), not just "ran without error", and quote the literal query output rather than paraphrasing it. Drop any candidate table and delete any `fntk` session.
 6. Document back on the item with `fab-ado-board`: a plain-language comment for a non-technical reader (which notebooks and tables changed and what the fix does), then transition the state (for example to Resolved) in the same update.
 
 ## After finishing
@@ -29,5 +29,6 @@ Confirm which environments hold the change and whether the other pre-production 
 ## Success Criteria
 
 - The item has a plain-language resolution comment and the right state.
-- Validation evidence exists and is quoted.
+- Validation evidence exists and is quoted literally.
+- The plan included a write contract for every table written.
 - No sessions or debug artifacts are left behind.

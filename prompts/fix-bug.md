@@ -37,6 +37,8 @@ Present, before changing anything:
 - The exact proposed change (the literal line or list being edited).
 - The measured blast radius.
 - Any adjacent findings, marked out of scope for this fix.
+- A [write contract](../docs/write-contract.md) for every table or notebook the fix would touch: permission, safety pattern, rerun behaviour and schema behaviour.
+- Evidence quoted as the **literal** `count()` or query output from the session, not a summary of it.
 
 **Wait for explicit approval.** A well-evidenced diagnosis is still not permission.
 
@@ -45,7 +47,7 @@ Present, before changing anything:
 1. Snapshot the live notebook first (`fntk notebook get-content --output-file` or `fab export`). Apply the approved change with a targeted `fntk cell update`, or edit the export and `fab import -f` for larger edits. Never edit a customer's local git checkout. Iterate on the changed cell in one live `fntk` session, remembering that running a writer cell writes for real.
 2. Delete the `fntk` session, then re-run the real writer notebook end to end with `fab job start`. A warm interactive kernel can hide state. Read what its default parameters mean before running (a mode flag that looks destructive may be its normal production behaviour).
 3. Validate against both the specific example from the report and the aggregate count for the affected population.
-4. Delete every `fntk` session you started and every debug notebook or `Files/_debug` path you created.
+4. Drop any candidate or staging table created for validation (a new permanent table still goes through your schema and migration notebooks). Delete every `fntk` session you started and every debug notebook or `Files/_debug` path you created.
 5. State plainly which environment now holds the fix. Never write to production directly, and never assume git or other environments picked it up. Ask.
 
 ### Phase 4: Document on Azure DevOps
@@ -63,5 +65,6 @@ Summarize root cause, notebooks touched, environments changed, validation eviden
 ## Success Criteria
 
 - The fix was proposed and approved before any live change.
-- Validation covers the example **and** the full affected population.
+- Validation covers the example **and** the full affected population, with literal output quoted.
+- A write contract was agreed before any write.
 - No scratch artifacts are left in the workspace and no sessions are left running.

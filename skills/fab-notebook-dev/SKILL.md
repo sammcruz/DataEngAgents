@@ -330,6 +330,8 @@ Key notes:
 - The `-i` path must point to the **directory** (not the `.ipynb` file directly)
 - Use `-f` to skip confirmation when overwriting
 - The directory name must match `<name>.Notebook`
+- A folder holding `notebook-content.py` (a `.py` export) needs `fab import ... --format .py`. Without it the import treats the file as `.ipynb` and fails with `NotebookContentError ... Unexpected character encountered while parsing value: #`.
+- `fab export -o <dir>` needs an **absolute** path that already exists. `-o .` can fail with a `NotSupported` error.
 - If the notebook already exists, `fab import` will prompt for overwrite (use `-f` to auto-confirm)
 
 ## Running and Checking Results
@@ -345,6 +347,8 @@ Check run status:
 ```bash
 fab job run-status "<workspace>.Workspace/<notebook>.Notebook" --id "<run-id>"
 ```
+
+In a narrow terminal the output is a wrapped table, so `grep` for a status word can miss it (and `grep Fail` matches the `failureReason` header). Prefer `--output_format json` and read the field. When extracting an id from `fab` output with `awk`, pipe through `tr -d '\r'`, or a polling loop never resolves. Killing a running `fab job run` client process cancels the Fabric job.
 
 Poll until complete (with sleep):
 
@@ -431,7 +435,7 @@ import json, os
 
 df = spark.table("bronze.<table_name>")
 cnt = df.count()
-ts = df.select(F.max('meta_ingestion_timestamp').cast('string').alias('m')).collect()[0]['m']
+ts = df.select(F.max('ingested_at').cast('string').alias('m')).collect()[0]['m']
 sample = [r.asDict(True) for r in df.limit(5).collect()]
 
 report = {'row_count': cnt, 'max_ingestion_timestamp': ts, 'sample_rows': sample}
@@ -558,11 +562,11 @@ A common task pattern: **add a new bronze/silver/gold table that some other note
 
 1. **Read** the existing schema-definition notebook (`nb_<layer>_schemas`) and migrations notebook (`nb_<layer>_schema_migrations`) via `fab export`.
 2. **Append** the new `StructType` schema(s) to `nb_<layer>_schemas` (raw + history pair if applicable). Keep original column names; add metadata columns:
-   - `meta_ingestion_timestamp` on raw tables
+   - `ingested_at` on raw tables
    - `meta_historization_timestamp` (and any project-standard meta_* columns) on history tables — typically defined as `StructType(<RAW>.fields + [extra meta fields])`
-3. **Append** a new migration block to `nb_<layer>_schema_migrations` with the next sequential version (e.g., if last was `0.15`, use `0.16`) calling `create_table(...)` for each new schema.
+3. **Append** a new migration block to `nb_<layer>_schema_migrations` with the next sequential version (e.g., if last was `0.15`, use `0.16`) calling your table-creation helper for each new schema.
 4. **Import & run the migrations notebook first** — verify `Completed` before touching writers.
-5. **Update the writer notebook** to add `meta_ingestion_timestamp` (typically `F.current_timestamp()`) and write to the new table (`df.write.format("delta").mode("overwrite").saveAsTable("<table>")`).
+5. **Update the writer notebook** to add `ingested_at` (typically `F.current_timestamp()`) and write to the new table (`df.write.format("delta").mode("overwrite").saveAsTable("<table>")`).
 6. **Ensure the writer notebook has the lakehouse binding** in its metadata (see Fabric PySpark Patterns).
 7. **Import & run the writer notebook**; confirm `Completed`.
 
@@ -595,6 +599,41 @@ When a writer notebook uses parameters (e.g., `entity = "orders"` at the top to 
 
 > Notebooks in Fabric pipelines typically receive parameters at runtime. The default value in Cell 1 is just for manual/debug runs.
 
+### The parameter cell must carry the `parameters` tag
+
+A notebook whose parameter cell is a plain cell **silently ignores** parameters passed by a pipeline or by `fab job start -P`. The job reports `Completed` and runs with the defaults, so a test "succeeds" without doing what you asked. When you build or generate a notebook, tag the cell in the `.ipynb` metadata:
+
+```json
+{"cell_type": "code", "metadata": {"tags": ["parameters"]}, "source": ["entity = \"orders\""], "outputs": [], "execution_count": null}
+```
+
+Verify by reading the rows the run wrote, never by reading the job status.
+
+### Passing parameters when `fab job start -P` does not
+
+`fab job start <item> -P name:type=value` did not reliably apply notebook parameters in some versions. The REST route works: run the notebook through the jobs API with an `executionData` body.
+
+```bash
+fab api -X post "workspaces/<ws-id>/items/<notebook-id>/jobs/instances?jobType=RunNotebook" \
+  -i body.json --show_headers
+# body.json:
+# {"executionData": {"parameters": {"entity": {"value": "orders", "type": "string"}}}}
+```
+
+The job instance id is in the `x-ms-job-id` response header. Poll it with `fab job run-status ... --id <id>` or `GET workspaces/<ws-id>/items/<notebook-id>/jobs/instances/<id>`.
+
+### Scratch-table test method (do not touch real data)
+
+To test a notebook that reads files or writes tables without touching production data:
+
+1. Give the notebook parameters for the source folder and the target tables.
+2. Create scratch tables with `CREATE TABLE <scratch> AS SELECT * FROM <real> WHERE 1=0` from a throwaway notebook.
+3. Put a copy of the input files, plus deliberately broken ones, in a `Files/_test_<topic>/` folder.
+4. Run the notebook with the scratch parameters and read the scratch tables.
+5. Delete everything afterwards (`fab rm` works on `Tables/<name>` and `Files/<dir>`), including the throwaway notebook.
+
+Keep any table that an error report or "current run" logic reads from untouched: a foreign run id written there can change what the next real run considers current.
+
 ## fab-cli Available Commands Reference
 
 | Command | Use for |
@@ -613,7 +652,7 @@ When a writer notebook uses parameters (e.g., `entity = "orders"` at the top to 
 | `fab find` | Search the OneLake catalog across workspaces (fab ≥ 1.6) |
 | `fab bulk-export` | Export all items of a workspace or folder (fab ≥ 1.7) |
 | `fab export --format py` | Export a notebook as `.py` instead of `.ipynb` (fab ≥ 1.4) |
-| `fab job start/run -P name:type=value` | Pass notebook parameters to a run |
+| `fab job start/run -P name:type=value` | Pass notebook parameters to a run (verify they were applied; see the REST route above if not) |
 
 **Not available in fab:** SQL queries, cell stdout, direct parquet reads. Cell stdout, tracebacks and ad-hoc queries are available through `fntk` (see the next table).
 

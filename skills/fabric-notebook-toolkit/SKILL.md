@@ -40,7 +40,9 @@ FNTK_TELEMETRY_DISABLED=1 fntk discover whoami --json --client-name <your-agent-
 
 - Both are interactive browser logins: an agent should hand these commands to the human, not try to run them.
 - When working on a customer tenant, sign in to that tenant with both CLIs, or `fntk` may get a token for the wrong directory.
-- `FAB_AUTH_UNAVAILABLE` or "Fabric CLI could not supply a token without interaction" means the `fab` login has expired.
+- `FAB_AUTH_UNAVAILABLE` or "Fabric CLI could not supply a token without interaction" means a login has expired. It can appear even though `fab auth status` and `fab api` still work, because `fntk` also needs a valid `az` session. Log in to both again.
+- A **stale local daemon** can keep an expired token after you log in again. Run `fntk server stop`, then retry `start-session`. An `AUTH_FAILED` mid-day usually means the `az` session expired.
+- **When `fntk` is unusable** (no interactive login possible), the fallback that works is: a scratch notebook, a run through the REST jobs API with parameters (see `fab-notebook-dev`), and reading the result from a `Files/` JSON file or the Delta table. Delete the scratch notebook afterwards.
 
 ## Always pass
 
@@ -50,6 +52,7 @@ FNTK_TELEMETRY_DISABLED=1 fntk discover whoami --json --client-name <your-agent-
 - Session ready ⇔ `data.livy_session_state == "idle"`.
 - Execution done ⇔ `data.status` is `completed` or `error`; then read `data.outputs` / `data.error`.
 - Follow `next_actions[].retry_after` / `stop_condition` for polling; on error read `error.suggestion` first.
+- `--client-name` is a **global** flag. If a command fails with "unrecognized arguments", put it before the subcommand: `fntk --client-name <your-agent-name> <domain> <cmd> ... --json`. That form works everywhere.
 - On a flag error run `fntk <domain> <cmd> --help` once instead of guessing again. `code run` has **no file flag** — pass multi-line code as `--code "$(cat cell.py)"`.
 
 ## Resolve IDs by name, every session
@@ -142,9 +145,19 @@ Cell-by-cell runs prove each step works on real data; they do **not** replace on
 - **PROD:** no `fntk` sessions, `code run`, or cell edits against production workspaces by default. Running code in a session executes it for real in that workspace; it is not a read-only operation like `fab job run-status`. A read-only diagnostic session in production needs explicit human approval for that specific query.
 - **Running a writer cell executes the write.** `saveAsTable`, `MERGE`, migrations and `%run` of a writer all run for real in DEV and TEST. Read what a cell does before submitting it; for investigation, run only the read cells and replace the write cell with a `print` or count.
 - **Cost:** a live session holds Spark capacity until it is deleted or times out (the local daemon drops its own connection after about 30 minutes idle; stopping the daemon does not stop the remote session). Always `notebook delete-session` when done, and never leave one running between tasks.
+- **Safe pattern for write cells:** do not iterate against the real target. Point the cell at a candidate table (`<target>__candidate`) in DEV, check it, and do the real write only in the final full `fab job start` run. Drop the candidate afterwards. It is scratch, not a new table: permanent tables still go through your schema and migration notebooks.
+- **Typed-ID confirmation for destructive commands.** Before `notebook delete`, before `notebook delete-session` on a session you did not start, and before `cell delete`, state the exact notebook or cell and have the human re-type or explicitly confirm the id. A deleted notebook cannot be recovered from here.
+- **The default Lakehouse is not a boundary.** It only decides what unqualified table names resolve to. Code in a session can read or write any Lakehouse the signed-in user can reach, so name every target with a 3-part name and check it against your workspace-local binding rule.
+- **Quote literal output.** Report `count()` results and query output exactly as `data.outputs` returned them, never as a paraphrase. A paraphrase is how a wrong number gets into a hand-off.
+- **Read the underlying error before retrying.** A generic "Spark statement failed, retrying" message can hide an authorization or capacity problem. Do not auto-retry on it.
+- **Do not run heavy scans locally.** Reading a large history table with a local engine such as DuckDB is slow and wasteful. Use a Spark session through `fntk` and delete it afterwards.
 - Don't re-POST `code run` or `start-session` after a failure — poll the ID you already have.
 - Never put real IDs, tokens or customer data from outputs into skill or knowledge files.
 - In an agent's auto or unattended mode, `fntk` writes (`cell update`, `code run` on a writer, `notebook delete`) may be blocked the same way `fab import` and `fab job start` are. Hand the human the exact command rather than retrying.
+
+## Related: autonomous remote agents
+
+Microsoft's Project Osmos (the `project-osmos` skill in `skills-for-fabric`) runs a whole outcome as a **remote** task in Fabric, with a local agent that only dispatches and monitors it. With `fntk` the local agent does the work step by step. Osmos is in preview, its cost rates were not published when this was written, and its "read-only" mode is guidance only (Fabric permissions are the real boundary), so evaluate it in a sandbox workspace you own rather than on customer capacities. The safety patterns above (candidate table, typed confirmation, 3-part names, literal output) came from reading its design, and they apply with or without it.
 
 ## Known gaps (preview)
 

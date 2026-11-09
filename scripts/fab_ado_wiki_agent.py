@@ -368,7 +368,7 @@ def main() -> int:
 
         run_log = _write_run_log(log_dir, envelope)
         print(json.dumps(envelope, indent=2, ensure_ascii=False))
-        print(f"\\nRun log: {run_log}")
+        print(f"\nRun log: {run_log}", file=sys.stderr)
         return 0
 
     except AgentError as exc:
