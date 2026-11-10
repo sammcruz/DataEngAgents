@@ -50,6 +50,7 @@ Enable the bundled hook with `git config core.hooksPath .githooks`.
 | `skills/` | Skills | What specialized knowledge is needed? |
 | `prompts/` | Prompts | What specific action to run? |
 | `scripts/` | — | Executable runners backing the agents above |
+| `.claude/`, `.claude-plugin/`, `CLAUDE.md` | — | Claude Code wiring: symlinks to `skills/`, `agents/`, `prompts/`, the plugin manifest, and an import of this file. Edit the real folders, not the links |
 | *(private repo)* | Knowledge | What is true about this customer? See `docs/knowledge-layer.md` |
 
 `REPO_MAP.md` indexes every agent, prompt, skill and doc on one page.
