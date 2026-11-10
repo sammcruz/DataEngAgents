@@ -112,7 +112,9 @@ carries the phases.
    `skills/`.
 3. Does someone need to be *responsible* for it, with a defined trust
    boundary for writes? → a new agent under `agents/` (and optionally
-   `.github/agents/*.agent.md` so it's selectable in GitHub Copilot).
+   `.github/agents/*.agent.md` so it's selectable in GitHub Copilot; Claude
+   Code picks it up automatically from the plugin or the `.claude/agents`
+   link).
 4. Is it a *specific, repeatable action*? → a new prompt under `prompts/`.
 5. Is it *reference material* someone would look up, not follow step by
    step? → a new doc under `docs/`.
