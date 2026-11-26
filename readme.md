@@ -63,14 +63,14 @@ templates.
 | `semantic-model-agent` | Semantic model changes with parent/child edit safety | `sm-safe-update` |
 | `devops-pipeline-agent` | A failed Azure DevOps CI/CD run | `fix-pipeline` |
 | `ado-board-agent`, `ado-wiki-agent` | Board and wiki access, dry-run first | `document-completed-work` |
-| `governance-agent` | Validating skills and agent contracts | `new-skill` |
+| `governance-agent` | Validating skills and agent contracts; keeping the knowledge base small and true | `new-skill`, `memory-review` |
 
 ### Prompts (`prompts/`): what to run
 
 Step-by-step workflows that tie agents and skills together: `fix-bug`,
 `fix-env-diff`, `fix-pipeline`, `deliver-work-item`, `release-notes`,
 `sm-safe-update`, `audit-workspace`, `document-completed-work`,
-`sync-notebook-changes`, `new-skill`.
+`sync-notebook-changes`, `new-skill`, `memory-review`.
 
 ### Docs (`docs/`)
 
@@ -84,10 +84,13 @@ Step-by-step workflows that tie agents and skills together: `fix-bug`,
 - [`knowledge-layer.md`](docs/knowledge-layer.md) and
   [`templates/knowledge/`](docs/templates/knowledge/): the private knowledge
   layer and empty templates for it.
+- [`memory-maintenance.md`](docs/memory-maintenance.md): keeping the knowledge
+  layer small, indexed and true: status fields, a generated index, size
+  budgets and a periodic review pass.
 - [`standing-instructions.template.md`](docs/standing-instructions.template.md):
   a starting point for the user-level instruction file your agent loads
   every session.
-- [`prompt-cookbook.md`](docs/prompt-cookbook.md): copy-paste prompts for the skills.
+- [`prompt-cookbook.md`](docs/prompt-cookbook.md): copy-paste prompts for the skills, for Codex, GitHub Copilot and Claude Code.
 - [`architecture.md`](docs/architecture.md): the layering model.
 
 ### Executable runners (`scripts/`)
@@ -97,6 +100,10 @@ Step-by-step workflows that tie agents and skills together: `fix-bug`,
   and lists branch commits.
 - `check_anonymized.py`: scans for leaked ids, e-mails, tenant URLs, tokens
   and (optionally) a private deny-list of names.
+- `build_knowledge_index.py`: for your **private** knowledge repo. Generates
+  an `INDEX.md` per log (one line per entry, with status), lists entries due
+  for review, and warns when a file or an always-loaded instruction file
+  outgrows its size budget.
 - `quick_validate.py`, `init_skill.py`, `generate_openai_yaml.py`: validate
   and scaffold skills.
 
@@ -218,8 +225,27 @@ instructions at
 path-scoped example at
 [`.github/instructions/python-scripts.instructions.md`](.github/instructions/python-scripts.instructions.md).
 Open this repo in VS Code with Copilot enabled and the custom agents are
-available immediately — no extra setup. Claude Code, Codex, Cursor and Gemini
-CLI read [`AGENTS.md`](AGENTS.md).
+available immediately — no extra setup. Codex, Cursor and Gemini CLI read
+[`AGENTS.md`](AGENTS.md).
+
+## Claude Code integration
+
+Claude Code reads [`AGENTS.md`](AGENTS.md) through the repo's
+[`CLAUDE.md`](CLAUDE.md), but it only loads skills, agents and commands from
+`.claude/` folders or from a plugin, so this repo provides both:
+
+- **Inside a clone:** `.claude/skills`, `.claude/agents` and `.claude/commands`
+  link to `skills/`, `agents/` and `prompts/`. Open the folder in Claude Code
+  and use `/fab-bootstrap`, `/fix-bug` and the rest directly. On Windows,
+  enable symlinks in git first (`git config --global core.symlinks true`).
+- **In any other project:** install it as a plugin. In Claude Code run
+  `/plugin marketplace add sammcruz/DataEngAgents`, then
+  `/plugin install dataengagents@dataengagents`. Components are namespaced,
+  for example `/dataengagents:fab-bootstrap`.
+- **Just trying it:** `claude --plugin-dir /path/to/DataEngAgents`.
+
+The [prompt cookbook](docs/prompt-cookbook.md#using-claude-code) has a Claude
+Code version of every recipe.
 
 ## License
 

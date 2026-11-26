@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "dataengagents",
+  "owner": { "name": "Samantha Cruz" },
+  "metadata": {
+    "description": "Microsoft Fabric and Azure DevOps skills, agents and prompts"
+  },
+  "plugins": [
+    {
+      "name": "dataengagents",
+      "source": "./",
+      "description": "Skills, agents and workflow prompts for Microsoft Fabric and Azure DevOps work with a dry-run-first safety model",
+      "version": "0.1.0"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 # <ClientName>
 
 > Private. Copy this file to your own knowledge repository. Never publish a filled-in copy.
+> **Last reviewed:** YYYY-MM-DD. Keep one subject per page and keep the page short: link to entries instead of copying them.
 
 ## Engagement
 

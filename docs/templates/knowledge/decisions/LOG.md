@@ -11,7 +11,11 @@ Entry format:
 **Decision:** what was chosen.
 **Why:** the reasoning, and what was rejected.
 **Consequences:** what this changes from now on.
+**Status:** current | superseded by <date>
+**Last checked:** YYYY-MM-DD
 ```
+
+When a decision changes, edit the old entry to say it is superseded and link to the new one. Do not leave two contradictory entries standing. See [`docs/memory-maintenance.md`](../../../memory-maintenance.md).
 
 ---
 
