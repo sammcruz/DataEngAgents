@@ -22,6 +22,13 @@ A starting point for the user-level instruction file your agent loads in every s
 - Prefer editing an existing skill or agent over writing a one-off instruction when the knowledge is reusable.
 - At the end of any task that produced a new, non-obvious learning (a mistake corrected, a root cause, a gotcha, a durable decision), update the right knowledge file yourself, then mention it briefly in the wrap-up. Do not wait to be asked.
 
+## Keep memory small and true
+
+- Keep this instruction file under 200 lines. Move detail into the knowledge repository and link to it.
+- Read `errors/INDEX.md` before the full error log, and open only the matching entry.
+- When you write a note, set its status (`verified-live`, `from-docs` or `unverified`) and the date. When a note turns out wrong, fix it in place instead of adding a contradicting entry.
+- A review pass (`prompts/memory-review.md`) rechecks stale and unverified notes on a schedule and proposes changes as a pull request.
+
 ## Never touch a customer repository's local checkout
 
 For any customer repository, never edit, commit or push against the local git checkout. Author live in the Fabric workspace with `fab` or `fntk`, and sync to git through Fabric Git integration. Do not run tools that write into customer checkouts (for example `fntk init`).

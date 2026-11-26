@@ -47,7 +47,7 @@ ALLOWED_HOSTS = {
     "marketplace.visualstudio.com", "tabulareditor.github.io", "daxstudio.org",
     "www.sqlbi.com", "semantic-link-labs.readthedocs.io", "docs.pydantic.dev",
     "graph.microsoft.com", "storage.azure.com", "database.windows.net", "vault.azure.net",
-    "docs.tabulareditor.com", "pbi.tools", "pypi.org", "learn.microsoft.com",
+    "docs.tabulareditor.com", "pbi.tools", "pypi.org", "learn.microsoft.com", "www.anthropic.com", "anthropic.com",
 }
 PLACEHOLDER_URL = re.compile(r"<[^>]+>|\{[^}]+\}|\$\{?\w+\}?|your[-_]|example|contoso|placeholder", re.I)
 

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "dataengagents",
+  "description": "Skills, agents and workflow prompts for Microsoft Fabric and Azure DevOps work with a dry-run-first safety model",
+  "version": "0.1.0",
+  "author": { "name": "Samantha Cruz" },
+  "homepage": "https://github.com/sammcruz/DataEngAgents",
+  "repository": "https://github.com/sammcruz/DataEngAgents",
+  "license": "MIT",
+  "keywords": ["fabric", "power-bi", "azure-devops", "data-engineering", "fab-cli"],
+  "skills": "./skills",
+  "commands": "./prompts"
+}
