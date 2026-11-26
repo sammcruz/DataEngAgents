@@ -90,7 +90,7 @@ Step-by-step workflows that tie agents and skills together: `fix-bug`,
 - [`standing-instructions.template.md`](docs/standing-instructions.template.md):
   a starting point for the user-level instruction file your agent loads
   every session.
-- [`prompt-cookbook.md`](docs/prompt-cookbook.md): copy-paste prompts for the skills.
+- [`prompt-cookbook.md`](docs/prompt-cookbook.md): copy-paste prompts for the skills, for Codex, GitHub Copilot and Claude Code.
 - [`architecture.md`](docs/architecture.md): the layering model.
 
 ### Executable runners (`scripts/`)
@@ -225,8 +225,27 @@ instructions at
 path-scoped example at
 [`.github/instructions/python-scripts.instructions.md`](.github/instructions/python-scripts.instructions.md).
 Open this repo in VS Code with Copilot enabled and the custom agents are
-available immediately — no extra setup. Claude Code, Codex, Cursor and Gemini
-CLI read [`AGENTS.md`](AGENTS.md).
+available immediately — no extra setup. Codex, Cursor and Gemini CLI read
+[`AGENTS.md`](AGENTS.md).
+
+## Claude Code integration
+
+Claude Code reads [`AGENTS.md`](AGENTS.md) through the repo's
+[`CLAUDE.md`](CLAUDE.md), but it only loads skills, agents and commands from
+`.claude/` folders or from a plugin, so this repo provides both:
+
+- **Inside a clone:** `.claude/skills`, `.claude/agents` and `.claude/commands`
+  link to `skills/`, `agents/` and `prompts/`. Open the folder in Claude Code
+  and use `/fab-bootstrap`, `/fix-bug` and the rest directly. On Windows,
+  enable symlinks in git first (`git config --global core.symlinks true`).
+- **In any other project:** install it as a plugin. In Claude Code run
+  `/plugin marketplace add sammcruz/DataEngAgents`, then
+  `/plugin install dataengagents@dataengagents`. Components are namespaced,
+  for example `/dataengagents:fab-bootstrap`.
+- **Just trying it:** `claude --plugin-dir /path/to/DataEngAgents`.
+
+The [prompt cookbook](docs/prompt-cookbook.md#using-claude-code) has a Claude
+Code version of every recipe.
 
 ## License
 

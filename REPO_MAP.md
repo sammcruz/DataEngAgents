@@ -37,6 +37,17 @@ One-page index of everything in this repository. Read this first in a new sessio
 | `fab-ado-board` / `fab-ado-wiki` | Azure DevOps work items, pull requests and wiki |
 | `repo-orientation` | Checking private knowledge before exploring a repository |
 
+## Tool wiring
+
+| Path | Tool | What it does |
+|---|---|---|
+| `AGENTS.md` | Codex, Cursor, Gemini CLI, Copilot | Repo-wide instructions |
+| `CLAUDE.md` | Claude Code | Imports `AGENTS.md` and adds Claude Code notes |
+| `.claude/skills`, `.claude/agents`, `.claude/commands` | Claude Code | Symlinks to `skills/`, `agents/`, `prompts/` so a clone works with no install |
+| `.claude-plugin/plugin.json`, `marketplace.json` | Claude Code | Packages the same folders as the `dataengagents` plugin |
+| `.github/agents/`, `.github/copilot-instructions.md` | GitHub Copilot | Custom agents and rules |
+| `skills/*/agents/openai.yaml` | Codex | Skill display metadata |
+
 ## Prompts (`prompts/`)
 
 `fix-bug`, `fix-env-diff`, `fix-pipeline`, `deliver-work-item`, `release-notes`, `sm-safe-update`, `audit-workspace`, `document-completed-work`, `sync-notebook-changes`, `new-skill`, `memory-review`.
@@ -52,7 +63,7 @@ One-page index of everything in this repository. Read this first in a new sessio
 | `write-contract.md` | The permission / safety pattern / rerun / schema agreement made before any write |
 | `standing-instructions.template.md` | A starting point for a user-level instruction file |
 | `templates/knowledge/` | Empty templates for the private knowledge repository |
-| `prompt-cookbook.md` | Example prompts for the skills |
+| `prompt-cookbook.md` | Example prompts for the skills, for Codex, GitHub Copilot and Claude Code |
 
 ## Scripts (`scripts/`)
 

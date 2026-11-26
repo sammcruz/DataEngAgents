@@ -7,6 +7,7 @@
 
 <p align="center">
   <a href="#before-you-start"><strong>Before You Start</strong></a> ·
+  <a href="#using-claude-code"><strong>Using Claude Code</strong></a> ·
   <a href="#recipe-index"><strong>Recipe Index</strong></a> ·
   <a href="#setup"><strong>Setup</strong></a> ·
   <a href="#permissions"><strong>Permissions</strong></a>
@@ -18,17 +19,22 @@
 
 <table>
   <tr>
-    <td width="33%" valign="top">
+    <td width="25%" valign="top">
       <h3>Codex</h3>
       <p>Use <code>$skill-name</code>.</p>
       <p>Example: <code>$fab-job-ops</code></p>
     </td>
-    <td width="33%" valign="top">
+    <td width="25%" valign="top">
       <h3>GitHub Copilot</h3>
       <p>Use <code>/skill-name</code>.</p>
       <p>Example: <code>/fab-job-ops</code></p>
     </td>
-    <td width="33%" valign="top">
+    <td width="25%" valign="top">
+      <h3>Claude Code</h3>
+      <p>Name the skill in plain words. <code>/skill-name</code> also works in this repo; <code>/dataengagents:skill-name</code> when installed as a plugin.</p>
+      <p>Setup: <a href="#using-claude-code">Using Claude Code</a></p>
+    </td>
+    <td width="25%" valign="top">
       <h3>Always Replace</h3>
       <p>Swap in your own workspace names, item names, table names, and paths before running anything.</p>
     </td>
@@ -36,6 +42,20 @@
 </table>
 
 > A strong Fabric prompt usually names the skill, the exact path or workspace, the desired action, and any safety rule like "dry run first" or "do not execute yet."
+
+---
+
+## Using Claude Code
+
+Claude Code reads [`AGENTS.md`](../AGENTS.md) through the repo's `CLAUDE.md`, but skills are only loaded from a few places, so pick one:
+
+| You want | Do this | Invoke a skill as |
+|---|---|---|
+| Work inside a clone of this repo | Nothing. `.claude/skills`, `.claude/agents` and `.claude/commands` link to `skills/`, `agents/` and `prompts/`. On Windows, enable symlinks in git first (`git config --global core.symlinks true`) or use the plugin. | `/fab-bootstrap` |
+| Use the skills from any project | In Claude Code run `/plugin marketplace add sammcruz/DataEngAgents`, then `/plugin install dataengagents@dataengagents` | `/dataengagents:fab-bootstrap` |
+| Try it once without installing | `claude --plugin-dir /path/to/DataEngAgents` | `/dataengagents:fab-bootstrap` |
+
+Either way you can skip the slash and describe the task: Claude matches a skill by its description, and the prompts below name the skill in plain words so they work with all three routes. The plugin also adds the agents (`/agents`) and the workflow prompts as commands, for example `/dataengagents:fix-bug`.
 
 ---
 
@@ -75,6 +95,12 @@ GitHub Copilot:
 Use the /fab-bootstrap skill to install Fabric CLI, fix PATH if needed, and help me log in with user auth.
 ```
 
+Claude Code:
+
+```text
+Use the fab-bootstrap skill to install Fabric CLI, fix PATH if needed, and help me log in with user auth.
+```
+
 ### Repair PATH for an existing install
 
 Codex:
@@ -87,6 +113,12 @@ GitHub Copilot:
 
 ```text
 Use the /fab-bootstrap skill to check my current fab installation and repair PATH only.
+```
+
+Claude Code:
+
+```text
+Use the fab-bootstrap skill to check my current fab installation and repair PATH only.
 ```
 
 ---
@@ -107,6 +139,12 @@ GitHub Copilot:
 Use the /fab-discovery skill to inspect Analytics Dev.Workspace and summarize the items I can work with.
 ```
 
+Claude Code:
+
+```text
+Use the fab-discovery skill to inspect Analytics Dev.Workspace and summarize the items I can work with.
+```
+
 ### Check which commands are relevant for an item
 
 Codex:
@@ -119,6 +157,12 @@ GitHub Copilot:
 
 ```text
 Use the /fab-discovery skill to inspect Test123.Workspace/nb_silver_customers.Notebook and tell me which fab commands are relevant.
+```
+
+Claude Code:
+
+```text
+Use the fab-discovery skill to inspect Test123.Workspace/nb_silver_customers.Notebook and tell me which fab commands are relevant.
 ```
 
 ---
@@ -139,6 +183,12 @@ GitHub Copilot:
 Use the /fab-semantic-model skill to connect to my open Power BI Desktop model through the Power BI Modeling MCP Server, improve the semantic model safely end-to-end, and return a Markdown documentation pack with rename mappings, hidden technical fields, measures created, hierarchy changes, and all skipped risky items.
 ```
 
+Claude Code:
+
+```text
+Use the fab-semantic-model skill to connect to my open Power BI Desktop model through the Power BI Modeling MCP Server, improve the semantic model safely end-to-end, and return a Markdown documentation pack with rename mappings, hidden technical fields, measures created, hierarchy changes, and all skipped risky items.
+```
+
 ### Review a Fabric semantic model before making changes
 
 Codex:
@@ -151,6 +201,12 @@ GitHub Copilot:
 
 ```text
 Use the /fab-semantic-model skill to connect to the semantic model Sales Analytics in workspace Analytics Dev through the Power BI Modeling MCP Server, assess star schema quality, naming, measures, folders, and descriptions, and separate safe direct fixes from risky recommendations before changing anything.
+```
+
+Claude Code:
+
+```text
+Use the fab-semantic-model skill to connect to the semantic model Sales Analytics in workspace Analytics Dev through the Power BI Modeling MCP Server, assess star schema quality, naming, measures, folders, and descriptions, and separate safe direct fixes from risky recommendations before changing anything.
 ```
 
 ---
@@ -171,6 +227,12 @@ GitHub Copilot:
 Use the /fab-deploy skill to export Analytics Dev.Workspace/nb_silver_customers.Notebook and import it into Test123.Workspace with overwrite safety checks.
 ```
 
+Claude Code:
+
+```text
+Use the fab-deploy skill to export Analytics Dev.Workspace/nb_silver_customers.Notebook and import it into Test123.Workspace with overwrite safety checks.
+```
+
 ### Generate commands from a deployment manifest
 
 Codex:
@@ -183,6 +245,12 @@ GitHub Copilot:
 
 ```text
 Use the /fab-deploy skill to turn this deployment manifest into fab commands and explain what each step does.
+```
+
+Claude Code:
+
+```text
+Use the fab-deploy skill to turn this deployment manifest into fab commands and explain what each step does.
 ```
 
 ---
@@ -203,6 +271,12 @@ GitHub Copilot:
 Use the /fab-job-ops skill to inspect the latest runs of Analytics Dev.Workspace/pl-main.DataPipeline and summarize failures or recent issues.
 ```
 
+Claude Code:
+
+```text
+Use the fab-job-ops skill to inspect the latest runs of Analytics Dev.Workspace/pl-main.DataPipeline and summarize failures or recent issues.
+```
+
 ### Start a notebook and watch it finish
 
 Codex:
@@ -215,6 +289,12 @@ GitHub Copilot:
 
 ```text
 Use the /fab-job-ops skill to start Test123.Workspace/nb_silver_customers.Notebook, monitor the run, and tell me the final status.
+```
+
+Claude Code:
+
+```text
+Use the fab-job-ops skill to start Test123.Workspace/nb_silver_customers.Notebook, monitor the run, and tell me the final status.
 ```
 
 ---
@@ -235,6 +315,12 @@ GitHub Copilot:
 Use the /fab-onelake-ops skill to check whether these Test123 lakehouse paths exist and summarize what is missing.
 ```
 
+Claude Code:
+
+```text
+Use the fab-onelake-ops skill to check whether these Test123 lakehouse paths exist and summarize what is missing.
+```
+
 ### Inspect files and tables in a lakehouse
 
 Codex:
@@ -247,6 +333,12 @@ GitHub Copilot:
 
 ```text
 Use the /fab-onelake-ops skill to inspect Test123.Workspace/lakehouse.Lakehouse/Files and Test123.Workspace/lakehouse.Lakehouse/Tables and explain the current structure.
+```
+
+Claude Code:
+
+```text
+Use the fab-onelake-ops skill to inspect Test123.Workspace/lakehouse.Lakehouse/Files and Test123.Workspace/lakehouse.Lakehouse/Tables and explain the current structure.
 ```
 
 ---
@@ -267,6 +359,12 @@ GitHub Copilot:
 Use the /fab-workspace-architecture skill to propose a single-workspace Fabric architecture with one lakehouse, bronze/silver/gold schemas, and clear folders for notebooks, pipelines, and shared assets.
 ```
 
+Claude Code:
+
+```text
+Use the fab-workspace-architecture skill to propose a single-workspace Fabric architecture with one lakehouse, bronze/silver/gold schemas, and clear folders for notebooks, pipelines, and shared assets.
+```
+
 ### Design a per-stage workspace layout
 
 Codex:
@@ -281,6 +379,12 @@ GitHub Copilot:
 Use the /fab-workspace-architecture skill to propose a Fabric architecture with separate Dev, Test, and Prod workspaces, explain what belongs in each stage, and show how notebooks, pipelines, lakehouses, and deployment flow should be organized.
 ```
 
+Claude Code:
+
+```text
+Use the fab-workspace-architecture skill to propose a Fabric architecture with separate Dev, Test, and Prod workspaces, explain what belongs in each stage, and show how notebooks, pipelines, lakehouses, and deployment flow should be organized.
+```
+
 ### Audit an existing workspace against the pattern
 
 Codex:
@@ -293,6 +397,12 @@ GitHub Copilot:
 
 ```text
 Use the /fab-workspace-architecture skill to inspect Analytics Dev.Workspace and tell me where it violates a one-lakehouse bronze/silver/gold architecture.
+```
+
+Claude Code:
+
+```text
+Use the fab-workspace-architecture skill to inspect Analytics Dev.Workspace and tell me where it violates a one-lakehouse bronze/silver/gold architecture.
 ```
 
 ---
@@ -313,6 +423,12 @@ GitHub Copilot:
 Use the /fab-api-bridge skill to call the workspaces endpoint, inspect the response shape, and then suggest a good query for just the names and IDs.
 ```
 
+Claude Code:
+
+```text
+Use the fab-api-bridge skill to call the workspaces endpoint, inspect the response shape, and then suggest a good query for just the names and IDs.
+```
+
 ### Build a reusable API spec
 
 Codex:
@@ -325,6 +441,12 @@ GitHub Copilot:
 
 ```text
 Use the /fab-api-bridge skill to create a JSON request spec for this Fabric API call and render the final fab api command before executing it.
+```
+
+Claude Code:
+
+```text
+Use the fab-api-bridge skill to create a JSON request spec for this Fabric API call and render the final fab api command before executing it.
 ```
 
 ---
@@ -345,6 +467,12 @@ GitHub Copilot:
 Use the /fab-acl-audit skill to inspect the ACLs on Test123.Workspace and summarize who has which role.
 ```
 
+Claude Code:
+
+```text
+Use the fab-acl-audit skill to inspect the ACLs on Test123.Workspace and summarize who has which role.
+```
+
 ### Prepare a safe permission change
 
 Codex:
@@ -357,6 +485,12 @@ GitHub Copilot:
 
 ```text
 Use the /fab-acl-audit skill to inspect the current ACLs, then render the command I would use to grant Viewer access to a specific user without executing it yet.
+```
+
+Claude Code:
+
+```text
+Use the fab-acl-audit skill to inspect the current ACLs, then render the command I would use to grant Viewer access to a specific user without executing it yet.
 ```
 
 ---
